@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rake &amp; Reason — Master the Math Behind Every Hand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt-deep: #0c3b2e;
+    --felt-mid: #124a3a;
+    --felt-light: #1c5c46;
+    --rail: #5c3a21;
+    --cream: #f1ecdd;
+    --cream-dim: #d9d2bb;
+    --ink: #14201a;
+    --gold: #c9a24b;
+    --gold-bright: #e3c26f;
+    --red-suit: #b8443a;
+    --black-suit: #1b1b1b;
+    --good: #6faa7a;
+    --bad: #c96a5e;
+    --card-radius: 8px;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    background:
+      radial-gradient(ellipse at top, var(--felt-light) 0%, var(--felt-deep) 55%, #082a20 100%);
+    color: var(--cream);
+    min-height: 100vh;
+  }
+
+  /* subtle felt texture */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: radial-gradient(circle, #fff 1px, transparent 1px);
+    background-size: 3px 3px;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .brand .suit {
+    color: var(--gold-bright);
+    font-size: 1.4rem;
+  }
+
+  .brand h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .brand .tag {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--cream-dim);
+    display: block;
+    margin-top: 2px;
+  }
+
+  .stats-strip {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    font-family: var(--font-mono);
+  }
+
+  .stat-pill {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(201,162,75,0.35);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-pill .n { color: var(--gold-bright); font-weight: 700; }
+
+  /* ---------- Nav ---------- */
+  nav.modules {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(241,236,221,0.12);
+  }
+
+  nav.modules button {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    color: var(--cream-dim);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    position: relative;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  nav.modules button:hover { color: var(--cream); background: rgba(255,255,255,0.05); }
+  nav.modules button.active {
+    color: var(--gold-bright);
+  }
+  nav.modules button.active::after {
+    content: "";
+    position: absolute;
+    left: 8px; right: 8px; bottom: -11px;
+    height: 2px;
+    background: var(--gold-bright);
+  }
+  nav.modules button .num {
+    font-family: var(--font-mono);
+    color: var(--gold);
+    margin-right: 6px;
+    font-size: 0.78em;
+  }
+
+  .difficulty-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 14px 0 22px;
+  }
+  .difficulty-row span { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cream-dim); }
+  .difficulty-row .seg {
+    display: flex;
+    background: rgba(0,0,0,0.25);
+    border-radius: 999px;
+    padding: 3px;
+    border: 1px solid rgba(241,236,221,0.12);
+  }
+  .difficulty-row .seg button {
+    border: none;
+    background: none;
+    color: var(--cream-dim);
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .difficulty-row .seg button.active {
+    background: var(--gold);
+    color: var(--ink);
+  }
+
+  /* ---------- Panel / card shell ---------- */
+  .panel {
+    background: rgba(8, 28, 22, 0.55);
+    border: 1px solid rgba(201,162,75,0.25);
+    border-radius: 14px;
+    padding: 26px 26px 28px;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    margin: 0 0 4px;
+    color: var(--cream);
+  }
+  .panel .sub {
+    color: var(--cream-dim);
+    font-size: 0.92rem;
+    margin: 0 0 22px;
+    line-height: 1.5;
+  }
+
+  /* playing cards */
+  .card-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 20px; }
+  .pcard {
+    width: 56px; height: 78px;
+    background: var(--cream);
+    border-radius: var(--card-radius);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.15rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .pcard.red { color: var(--red-suit); }
+  .pcard.black { color: var(--black-suit); }
+  .pcard .suit-sym { font-size: 1.3rem; margin-top: 2px; }
+  .pcard.ghost {
+    background: rgba(241,236,221,0.08);
+    border: 1px dashed rgba(241,236,221,0.3);
+    color: rgba(241,236,221,0.35);
+  }
+  .card-group-label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--gold); margin-bottom: 6px; display: block;
+  }
+  .card-groups { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 18px; }
+
+  /* question / answer flow */
+  .question-block { margin-top: 4px; }
+  .question-text { font-size: 1.05rem; line-height: 1.55; margin-bottom: 16px; }
+  .answer-input-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  input[type="text"], input[type="number"] {
+    background: rgba(241,236,221,0.08);
+    border: 1px solid rgba(241,236,221,0.3);
+    color: var(--cream);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    padding: 10px 12px;
+    border-radius: 8px;
+    width: 130px;
+  }
+  input:focus { outline: none; border-color: var(--gold-bright); }
+
+  button.primary {
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 11px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  button.primary:hover { background: var(--gold-bright); }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.ghost-btn {
+    background: transparent;
+    border: 1px solid rgba(241,236,221,0.3);
+    color: var(--cream);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  button.ghost-btn:hover { border-color: var(--gold-bright); color: var(--gold-bright); }
+
+  .choice-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice-btn {
+    background: rgba(241,236,221,0.06);
+    border: 1px solid rgba(241,236,221,0.25);
+    color: var(--cream);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.92rem;
+    min-width: 100px;
+  }
+  .choice-btn:hover { border-color: var(--gold-bright); background: rgba(201,162,75,0.1); }
+  .choice-btn.correct { border-color: var(--good); background: rgba(111,170,122,0.18); }
+  .choice-btn.incorrect { border-color: var(--bad); background: rgba(201,106,94,0.18); }
+
+  .feedback-box {
+    margin-top: 20px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid;
+    line-height: 1.6;
+    font-size: 0.94rem;
+    animation: fadeIn 0.2s ease;
+  }
+  .feedback-box.good { border-color: rgba(111,170,122,0.5); background: rgba(111,170,122,0.1); }
+  .feedback-box.bad { border-color: rgba(201,106,94,0.5); background: rgba(201,106,94,0.1); }
+  .feedback-box .verdict { font-weight: 700; margin-bottom: 6px; display: block; }
+  .feedback-box .verdict.good-text { color: var(--good); }
+  .feedback-box .verdict.bad-text { color: var(--bad); }
+  .feedback-box code, .feedback-box .formula { font-family: var(--font-mono); color: var(--gold-bright); }
+
+  .next-row { margin-top: 18px; display: flex; justify-content: flex-end; }
+
+  /* EV bar */
+  .ev-scale {
+    margin-top: 8px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(241,236,221,0.1);
+    overflow: hidden;
+    position: relative;
+  }
+  .ev-scale .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bad), var(--gold), var(--good));
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin: 18px 0 20px;
+  }
+  .info-cell {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid rgba(241,236,221,0.1);
+  }
+  .info-cell .label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--cream-dim); }
+  .info-cell .value { font-family: var(--font-mono); font-size: 1.15rem; color: var(--gold-bright); font-weight: 700; margin-top: 3px; }
+
+  /* Monte Carlo */
+  .mc-controls { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }
+  .mc-select-group label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 6px; }
+  select {
+    background: rgba(241,236,221,0.08);
+    border: 1px solid rgba(241,236,221,0.3);
+    color: var(--cream);
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+  }
+  .mc-bars { margin-top: 22px; }
+  .mc-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .mc-bar-row .mc-label { width: 90px; font-family: var(--font-mono); font-size: 0.85rem; flex-shrink: 0; }
+  .mc-bar-track { flex: 1; height: 22px; background: rgba(0,0,0,0.25); border-radius: 6px; overflow: hidden; }
+  .mc-bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+  .mc-bar-fill.p1 { background: linear-gradient(90deg, #3a7c5c, var(--good)); }
+  .mc-bar-fill.p2 { background: linear-gradient(90deg, #8f4a3f, var(--bad)); }
+  .mc-bar-fill.tie { background: var(--cream-dim); }
+  .mc-pct { width: 60px; text-align: right; font-family: var(--font-mono); font-weight: 700; flex-shrink: 0; }
+  .mc-progress-label { font-family: var(--font-mono); font-size: 0.82rem; color: var(--cream-dim); margin-top: 10px; }
+
+  .explainer {
+    font-size: 0.85rem;
+    color: var(--cream-dim);
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(241,236,221,0.15);
+    line-height: 1.55;
+  }
+  .explainer b { color: var(--cream); }
+
+  footer.hint {
+    text-align: center;
+    color: var(--cream-dim);
+    font-size: 0.78rem;
+    margin-top: 34px;
+  }
+
+  @media (max-width: 640px) {
+    .stats-strip { flex-wrap: wrap; }
+    .pcard { width: 46px; height: 64px; font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* =========================================================================
+   RAKE & REASON — a Duolingo-style trainer for poker statistics
+   Single-file vanilla JS app. No build step required.
+   ========================================================================= */
+
+/* ---------------------------- Poker primitives ---------------------------- */
+const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+const SUITS = ['s','h','d','c'];
+const SUIT_SYMBOL = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const SUIT_COLOR = { s: 'black', h: 'red', d: 'red', c: 'black' };
+
+function rankValue(r) { return RANKS.indexOf(r) + 2; }
+function makeDeck() {
+  const deck = [];
+  for (const r of RANKS) for (const s of SUITS) deck.push(r + s);
+  return deck;
+}
+function shuffle(deck) {
+  const d = deck.slice();
+  for (let i = d.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [d[i], d[j]] = [d[j], d[i]];
+  }
+  return d;
+}
+function combinationsArr(arr, k) {
+  const result = [];
+  const combo = [];
+  (function helper(start) {
+    if (combo.length === k) { result.push(combo.slice()); return; }
+    for (let i = start; i < arr.length; i++) {
+      combo.push(arr[i]);
+      helper(i + 1);
+      combo.pop();
+    }
+  })(0);
+  return result;
+}
+function nCr(n, r) {
+  if (r < 0 || r > n) return 0;
+  r = Math.min(r, n - r);
+  let num = 1, den = 1;
+  for (let i = 0; i < r; i++) { num *= (n - i); den *= (i + 1); }
+  return Math.round(num / den);
+}
+
+function evaluate5(cards) {
+  const ranks = cards.map(c => rankValue(c[0])).sort((a, b) => b - a);
+  const suits = cards.map(c => c[1]);
+  const isFlush = suits.every(s => s === suits[0]);
+  const counts = {};
+  for (const r of ranks) counts[r] = (counts[r] || 0) + 1;
+  const groups = Object.entries(counts)
+    .map(([r, c]) => [parseInt(r), c])
+    .sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const uniqueRanksDesc = [...new Set(ranks)].sort((a, b) => b - a);
+  let straightHigh = null;
+  if (uniqueRanksDesc.length === 5) {
+    if (uniqueRanksDesc[0] - uniqueRanksDesc[4] === 4) straightHigh = uniqueRanksDesc[0];
+    else if (JSON.stringify(uniqueRanksDesc) === JSON.stringify([14, 5, 4, 3, 2])) straightHigh = 5;
+  }
+  const pattern = groups.map(g => g[1]).join('');
+  if (straightHigh && isFlush) return [8, straightHigh];
+  if (pattern === '41') return [7, groups[0][0], groups[1][0]];
+  if (pattern === '32') return [6, groups[0][0], groups[1][0]];
+  if (isFlush) return [5, ...ranks];
+  if (straightHigh) return [4, straightHigh];
+  if (pattern === '311') return [3, groups[0][0], ...groups.slice(1).map(g => g[0]).sort((a, b) => b - a)];
+  if (pattern === '221') return [2, Math.max(groups[0][0], groups[1][0]), Math.min(groups[0][0], groups[1][0]), groups[2][0]];
+  if (pattern === '2111') return [1, groups[0][0], ...groups.slice(1).map(g => g[0]).sort((a, b) => b - a)];
+  return [0, ...ranks];
+}
+function compareHandArr(a, b) {
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const av = a[i] ?? -1, bv = b[i] ?? -1;
+    if (av !== bv) return av - bv;
+  }
+  return 0;
+}
+function evaluateBest(cards) {
+  if (cards.length === 5) return evaluate5(cards);
+  let best = null;
+  for (const c of combinationsArr(cards, 5)) {
+    const val = evaluate5(c);
+    if (!best || compareHandArr(val, best) > 0) best = val;
+  }
+  return best;
+}
+const HAND_NAMES = ['High Card', 'Pair', 'Two Pair', 'Trips', 'Straight', 'Flush', 'Full House', 'Quads', 'Straight Flush'];
+
+function cardEl(card, ghost) {
+  if (ghost) return `<div class="pcard ghost">?</div>`;
+  const r = card[0], s = card[1];
+  const color = SUIT_COLOR[s];
+  return `<div class="pcard ${color}"><span>${r}</span><span class="suit-sym">${SUIT_SYMBOL[s]}</span></div>`;
+}
+function cardsHtml(cards, ghostCount) {
+  let html = cards.map(c => cardEl(c)).join('');
+  if (ghostCount) for (let i = 0; i < ghostCount; i++) html += cardEl(null, true);
+  return html;
+}
+
+/* ---------------------------- Global app state ---------------------------- */
+const state = {
+  module: 'odds',
+  difficulty: 'beginner', // beginner | intermediate | advanced
+  score: 0,
+  streak: 0,
+  answered: 0,
+  correct: 0,
+  // per-module question progress
+  oddsIdx: 0,
+  comboIdx: 0,
+  potIdx: 0,
+  evIdx: 0,
+  currentAnswer: null, // holds revealed/answered flag per question view
+};
+
+const MODULES = [
+  { id: 'odds', label: 'Poker Odds' },
+  { id: 'combo', label: 'Combinatorics' },
+  { id: 'pot', label: 'Pot Odds' },
+  { id: 'ev', label: 'EV Trainer' },
+  { id: 'coach', label: 'AI Coach' },
+  { id: 'mc', label: 'Simulator' },
+];
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    ${renderHeader()}
+    ${renderNav()}
+    ${renderDifficulty()}
+    <div class="panel">${renderModule()}</div>
+    <footer class="hint">Built for learning — verify decisions with a full solver before playing real stakes with real money.</footer>
+  `;
+  attachHandlers();
+}
+
+function renderHeader() {
+  const acc = state.answered ? Math.round((state.correct / state.answered) * 100) : 0;
+  return `
+  <header class="top">
+    <div class="brand">
+      <span class="suit">♠♥</span>
+      <div>
+        <h1>Rake &amp; Reason</h1>
+        <span class="tag">Become a better player by mastering the math</span>
+      </div>
+    </div>
+    <div class="stats-strip">
+      <div class="stat-pill">🔥 <span class="n">${state.streak}</span> streak</div>
+      <div class="stat-pill">⭐ <span class="n">${state.score}</span> pts</div>
+      <div class="stat-pill">🎯 <span class="n">${acc}%</span> accuracy</div>
+    </div>
+  </header>`;
+}
+
+function renderNav() {
+  return `
+  <nav class="modules">
+    ${MODULES.map((m, i) => `
+      <button data-module="${m.id}" class="${state.module === m.id ? 'active' : ''}">
+        <span class="num">${String(i + 1).padStart(2, '0')}</span>${m.label}
+      </button>
+    `).join('')}
+  </nav>`;
+}
+
+function renderDifficulty() {
+  const levels = [['beginner', 'Beginner'], ['intermediate', 'Intermediate'], ['advanced', 'Advanced']];
+  return `
+  <div class="difficulty-row">
+    <span>Difficulty</span>
+    <div class="seg">
+      ${levels.map(([id, label]) => `<button data-diff="${id}" class="${state.difficulty === id ? 'active' : ''}">${label}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderModule() {
+  switch (state.module) {
+    case 'odds': return renderOddsModule();
+    case 'combo': return renderComboModule();
+    case 'pot': return renderPotOddsModule();
+    case 'ev': return renderEvModule();
+    case 'coach': return renderCoachModule();
+    case 'mc': return renderMonteCarloModule();
+    default: return '';
+  }
+}
+
+/* =========================================================================
+   MODULE 1 — POKER ODDS
+   ========================================================================= */
+const ODDS_QUESTIONS = {
+  beginner: [
+    {
+      hole: ['Ah', 'Kh'], board: ['Qh', '8h', '2c'],
+      prompt: "You hold A♥K♥ on a Q♥8♥2♣ flop. Two cards to come. What's the probability you make a flush by the river?",
+      outs: 9, unseen: 47, twoCards: true,
+      explain: "You have 9 hearts left in the deck (13 − 4 you can see) out of 47 unseen cards. With two cards still to come, the exact probability is 1 − (38/47 × 37/46). The quick 'rule of 4' estimate (9 outs × 4 ≈ 36%) gets you very close."
+    },
+    {
+      hole: ['9c', '8c'], board: ['7c', '2d', '2s'],
+      prompt: "You hold 9♣8♣ on a 7♣2♦2♠ flop (no flush draw). You need a straight — you're open-ended. Two cards to come. What's the probability you hit your straight by the river?",
+      outs: 8, unseen: 47, twoCards: true,
+      explain: "An open-ended straight draw has 8 outs (four 6s and four Ts). With two cards to come: 1 − (39/47 × 38/46) ≈ 31.5%. The rule-of-4 shortcut (8 × 4 = 32%) is a near-perfect estimate here."
+    },
+  ],
+  intermediate: [
+    {
+      hole: ['Jd', 'Td'], board: ['9d', '3h', '2c', 'Ah'],
+      prompt: "You hold J♦T♦ on a 9♦3♥2♣A♥ turn (one card to come). You have a gutshot to a straight (need a Q). What's the probability you hit on the river?",
+      outs: 4, unseen: 46, twoCards: false,
+      explain: "One card to come, 4 outs (the four Queens) out of 46 unseen cards: 4/46 ≈ 8.7%. This is why the 'rule of 2' (4 × 2 = 8%) is the correct shortcut with only one card left."
+    },
+    {
+      hole: ['Kc', 'Qc'], board: ['7c', '4c', '9h'],
+      prompt: "You hold K♣Q♣ on a 7♣4♣9♥ flop — a flush draw. Two cards to come. What's the probability you complete the flush by the river?",
+      outs: 9, unseen: 47, twoCards: true,
+      explain: "Same math as any flush draw: 9 outs, 47 unseen, two cards to come → 1 − (38/47 × 37/46) ≈ 35.0%."
+    },
+  ],
+  advanced: [
+    {
+      hole: ['Ks', 'Kd'], board: ['Kh', '7s', '2d'],
+      prompt: "You flopped a set with K♠K♦ on K♥7♠2♦. Two cards to come. What's the probability you improve to a full house or quads by the river?",
+      outs: 10, unseen: 47, twoCards: true,
+      explain: "A set has 10 outs to improve: 7 cards pair the board (giving a full house) + 3 remaining kings for quads = 10 outs. Over two cards: 1 − (37/47 × 36/46) ≈ 38.4%."
+    },
+    {
+      hole: ['Ah', '9h'], board: ['Kh', '7c', '2h'],
+      prompt: "You hold A♥9♥ on K♥7♣2♥ — a flush draw plus two overcards aren't in play here, but you also pick up backdoor relevance. Focusing only on the flush: two cards to come, what's your probability of making the flush by the river?",
+      outs: 9, unseen: 47, twoCards: true,
+      explain: "Still a standard 9-out flush draw: 1 − (38/47 × 37/46) ≈ 35.0%. Advanced players layer in backdoor equity and overcard outs separately rather than lumping them together."
+    },
+  ],
+};
+
+function getOddsQ() {
+  const list = ODDS_QUESTIONS[state.difficulty];
+  return list[state.oddsIdx % list.length];
+}
+
+function exactProb(q) {
+  if (q.twoCards) {
+    const miss = q.unseen - q.outs;
+    const missBoth = (miss / q.unseen) * ((miss - 1) / (q.unseen - 1));
+    return (1 - missBoth) * 100;
+  }
+  return (q.outs / q.unseen) * 100;
+}
+
+function renderOddsModule() {
+  const q = getOddsQ();
+  const answered = state.currentAnswer !== null && state.currentAnswer.module === 'odds';
+  return `
+  <h2>Module 1 · Poker Odds</h2>
+  <p class="sub">Learn probability the way you'll actually use it at the table: through real hands, not formulas in isolation.</p>
+
+  <div class="card-groups">
+    <div>
+      <span class="card-group-label">Your hand</span>
+      <div class="card-row">${cardsHtml(q.hole)}</div>
+    </div>
+    <div>
+      <span class="card-group-label">Board</span>
+      <div class="card-row">${cardsHtml(q.board, q.twoCards ? 2 : 1)}</div>
+    </div>
+  </div>
+
+  <div class="question-block">
+    <p class="question-text">${q.prompt}</p>
+    ${!answered ? `
+      <div class="answer-input-row">
+        <input type="number" id="odds-input" placeholder="e.g. 35" min="0" max="100" step="0.1" />
+        <span style="color:var(--cream-dim)">%</span>
+        <button class="primary" id="odds-submit">Check</button>
+      </div>
+    ` : renderOddsFeedback(q)}
+  </div>
+  <div class="explainer"><b>Why this matters:</b> the "rule of 4 and 2", multiply your outs by 4 (two cards to come) or 2 (one card to come), is a mental-math shortcut for exactly this calculation. It's an approximation of E[X] = Σ x·P(X=x) applied to a binary "did I hit" outcome.</div>
+  `;
+}
+
+function renderOddsFeedback(q) {
+  const exact = exactProb(q);
+  const userVal = state.currentAnswer.userVal;
+  const diff = Math.abs(userVal - exact);
+  const good = diff <= 3;
+  return `
+    <div class="feedback-box ${good ? 'good' : 'bad'}">
+      <span class="verdict ${good ? 'good-text' : 'bad-text'}">${good ? 'Nice — right in range!' : 'Not quite — here is the math'}</span>
+      Your answer: <span class="formula">${userVal}%</span> &nbsp;|&nbsp; Exact answer: <span class="formula">${exact.toFixed(1)}%</span><br/><br/>
+      ${q.explain}
+    </div>
+    <div class="next-row"><button class="primary" id="odds-next">Next hand →</button></div>
+  `;
+}
+
+/* =========================================================================
+   MODULE 2 — COMBINATORICS
+   ========================================================================= */
+const COMBO_QUESTIONS = {
+  beginner: [
+    { prompt: "How many distinct 2-card combinations of pocket Aces (A♠A♥, A♠A♦, etc.) exist in a single deck?", answer: 6, explain: "You're choosing 2 of the 4 aces: C(4,2) = 6 combinations. This is true for any specific pocket pair." },
+    { prompt: "How many total combinations of any pocket pair (22 through AA) exist in the deck?", answer: 78, explain: "13 ranks × C(4,2) = 13 × 6 = 78 total pocket pair combinations." },
+  ],
+  intermediate: [
+    { prompt: "How many combinations of a specific suited hand — like A♣K♣ specifically — exist?", answer: 4, explain: "A specific suited hand like 'AKs' has exactly 4 combinations in the deck: one for each suit (A♠K♠, A♥K♥, A♦K♦, A♣K♣)." },
+    { prompt: "How many total combinations of Ace-King (suited AND offsuit combined) exist?", answer: 16, explain: "4 suited combos + 12 offsuit combos (4 aces × 3 remaining kings of different suits) = 16 total AK combinations." },
+  ],
+  advanced: [
+    { prompt: "The board shows two hearts. How many flush-draw combinations (two hearts in the hole) can an opponent hold, given 11 hearts remain unseen?", answer: 55, explain: "With 11 hearts left in the deck, the number of 2-card heart combinations is C(11,2) = 55. This is the kind of range math advanced players do on the fly to judge how many flush combos are realistic." },
+    { prompt: "How many combinations of trip Kings (K-K-K using one hole card) are possible if the board already shows one King, and you hold no Kings — from an opponent's perspective needing exactly one King in the hole?", answer: 3, explain: "One King is on the board, so 3 remain in the deck. An opponent needs exactly one of those 3 kings (paired with any other card) — 3 combinations of 'has a king in hand' at the single-card level." },
+  ],
+};
+
+function getComboQ() {
+  const list = COMBO_QUESTIONS[state.difficulty];
+  return list[state.comboIdx % list.length];
+}
+
+function renderComboModule() {
+  const q = getComboQ();
+  const answered = state.currentAnswer !== null && state.currentAnswer.module === 'combo';
+  return `
+  <h2>Module 2 · Combinatorics</h2>
+  <p class="sub">Instead of memorizing ranges, learn why they're shaped the way they are.</p>
+  <div class="question-block">
+    <p class="question-text">${q.prompt}</p>
+    ${!answered ? `
+      <div class="answer-input-row">
+        <input type="number" id="combo-input" placeholder="Your answer" />
+        <button class="primary" id="combo-submit">Check</button>
+      </div>
+    ` : renderComboFeedback(q)}
+  </div>
+  <div class="explainer"><b>Core tool:</b> combinations are calculated with C(n, r) = n! / (r!(n−r)!), "n choose r." Every range-construction question in poker reduces to this formula.</div>
+  `;
+}
+
+function renderComboFeedback(q) {
+  const userVal = state.currentAnswer.userVal;
+  const good = Number(userVal) === q.answer;
+  return `
+    <div class="feedback-box ${good ? 'good' : 'bad'}">
+      <span class="verdict ${good ? 'good-text' : 'bad-text'}">${good ? 'Correct!' : 'Not quite'}</span>
+      Your answer: <span class="formula">${userVal}</span> &nbsp;|&nbsp; Correct answer: <span class="formula">${q.answer}</span><br/><br/>
+      ${q.explain}
+    </div>
+    <div class="next-row"><button class="primary" id="combo-next">Next question →</button></div>
+  `;
+}
+
+/* =========================================================================
+   MODULE 3 — POT ODDS
+   ========================================================================= */
+function genPotScenario(difficulty) {
+  const pots = { beginner: [40, 60, 80, 100], intermediate: [75, 120, 150, 220], advanced: [90, 140, 260, 340] };
+  const potList = pots[difficulty];
+  const pot = potList[Math.floor(Math.random() * potList.length)];
+  const betFrac = [0.33, 0.5, 0.66, 0.75, 1.0][Math.floor(Math.random() * 5)];
+  const bet = Math.round(pot * betFrac);
+  const equity = Math.round(15 + Math.random() * 55); // 15-70%
+  return { pot, bet, equity };
+}
+
+function renderPotOddsModule() {
+  if (!state._potScenario) state._potScenario = genPotScenario(state.difficulty);
+  const s = state._potScenario;
+  const answered = state.currentAnswer !== null && state.currentAnswer.module === 'pot';
+  const potAfterBet = s.pot + s.bet;
+  const requiredEquity = (s.bet / (potAfterBet + s.bet)) * 100;
+
+  return `
+  <h2>Module 3 · Pot Odds</h2>
+  <p class="sub">The math that decides whether a call is profitable — every single time you face a bet.</p>
+
+  <div class="info-grid">
+    <div class="info-cell"><div class="label">Pot (before bet)</div><div class="value">${s.pot} chips</div></div>
+    <div class="info-cell"><div class="label">Opponent bets</div><div class="value">${s.bet} chips</div></div>
+    <div class="info-cell"><div class="label">Your equity</div><div class="value">${s.equity}%</div></div>
+  </div>
+
+  <div class="question-block">
+    <p class="question-text">Facing this bet with ${s.equity}% equity to win the hand — is calling profitable? Fold, call, or raise?</p>
+    ${!answered ? `
+      <div class="choice-row">
+        <button class="choice-btn" data-pot-choice="fold">Fold</button>
+        <button class="choice-btn" data-pot-choice="call">Call</button>
+        <button class="choice-btn" data-pot-choice="raise">Raise</button>
+      </div>
+    ` : renderPotFeedback(s, requiredEquity)}
+  </div>
+  <div class="explainer"><b>The formula:</b> required equity = bet ÷ (pot after your call + bet). If your real equity beats that number, calling is +EV.</div>
+  `;
+}
+
+function renderPotFeedback(s, requiredEquity) {
+  const correctChoice = s.equity > requiredEquity ? 'call' : 'fold';
+  const userChoice = state.currentAnswer.userVal;
+  // "raise" is judged correct if equity is well above required (dominant edge)
+  const isGood = (userChoice === correctChoice) || (userChoice === 'raise' && s.equity > requiredEquity + 20);
+  return `
+    <div class="feedback-box ${isGood ? 'good' : 'bad'}">
+      <span class="verdict ${isGood ? 'good-text' : 'bad-text'}">${isGood ? 'Good read!' : 'Let us check the math'}</span>
+      You need <span class="formula">${requiredEquity.toFixed(1)}%</span> equity to profitably call ${s.bet} into a pot of ${s.pot + s.bet}.
+      You have <span class="formula">${s.equity}%</span> — that makes ${correctChoice === 'call' ? 'calling' : 'folding'} the mathematically correct baseline play.<br/><br/>
+      Pot odds are expressed as a ratio (${s.bet}:${s.pot + s.bet}) and converted to a percentage: bet ÷ (total pot) = required equity.
+    </div>
+    <div class="next-row"><button class="primary" id="pot-next">Next scenario →</button></div>
+  `;
+}
+
+/* =========================================================================
+   MODULE 4 — EV TRAINER
+   ========================================================================= */
+const EV_SCENARIOS = {
+  beginner: [
+    { title: "River bluff-catch", desc: "Pot is 100. Opponent shoves 100 on the river. You think they're bluffing 30% of the time.", callEV: (100*0.30) - (100*0.70), explain: "EV(call) = 0.30 × (+100) + 0.70 × (−100) = +30 − 70 = −40. Folding (EV = 0) beats calling here." },
+    { title: "Flop continuation bet", desc: "Pot is 60. You bet 40 as a bluff. Opponent folds 55% of the time; when they call, you lose the bet.", callEV: (60*0.55) - (40*0.45), explain: "EV(bet) = 0.55 × (+60) + 0.45 × (−40) = 33 − 18 = +15. This bluff shows a positive EV over many repetitions." },
+  ],
+  intermediate: [
+    { title: "Set-mining call", desc: "You call a 20-chip raise into a 60-chip pot hoping to flop a set (≈12% by the flop) and win a stacked pot worth 300 when you hit.", callEV: (0.12*300) - (0.88*20), explain: "EV(call) = 0.12 × (+300) + 0.88 × (−20) = 36 − 17.6 = +18.4. Implied odds — the extra chips you'll win when you hit — make marginal calls profitable even with long odds against improving." },
+  ],
+  advanced: [
+    { title: "Thin value bet vs. bluff-raise risk", desc: "Pot is 150. You bet 100 for thin value. Opponent calls 60% (you win those) and raises 15% (you fold, losing your bet), folds 25% (no change).", callEV: (0.60*150) + (0.15*-100) + (0.25*0), explain: "EV(bet) = 0.60 × (+150) + 0.15 × (−100) + 0.25 × 0 = 90 − 15 + 0 = +75. Even with some raise risk, the frequent thin-value calls carry this bet to a strongly +EV play." },
+  ],
+};
+
+function getEvQ() {
+  const list = EV_SCENARIOS[state.difficulty];
+  return list[state.evIdx % list.length];
+}
+
+function renderEvModule() {
+  const q = getEvQ();
+  const answered = state.currentAnswer !== null && state.currentAnswer.module === 'ev';
+  return `
+  <h2>Module 4 · EV Trainer</h2>
+  <p class="sub">Stop asking "did I win the hand?" Start asking "was this decision profitable in the long run?"</p>
+  <div class="question-block">
+    <p class="question-text"><b>${q.title}.</b> ${q.desc}</p>
+    ${!answered ? `
+      <p style="color:var(--cream-dim); font-size:0.88rem; margin-bottom:10px;">Estimate the expected value of the play in chips (can be negative):</p>
+      <div class="answer-input-row">
+        <input type="number" id="ev-input" placeholder="e.g. -40" step="0.1" />
+        <button class="primary" id="ev-submit">Check</button>
+      </div>
+    ` : renderEvFeedback(q)}
+  </div>
+  <div class="explainer"><b>Formula:</b> E[X] = Σ x·P(X=x) — sum each outcome's value weighted by its probability. This is the single most important equation in poker decision-making.</div>
+  `;
+}
+
+function renderEvFeedback(q) {
+  const exact = q.callEV;
+  const userVal = Number(state.currentAnswer.userVal);
+  const diff = Math.abs(userVal - exact);
+  const good = diff <= Math.max(3, Math.abs(exact) * 0.15);
+  const pct = Math.max(0, Math.min(100, ((exact + 100) / 200) * 100));
+  return `
+    <div class="feedback-box ${good ? 'good' : 'bad'}">
+      <span class="verdict ${good ? 'good-text' : 'bad-text'}">${good ? 'Sharp estimate!' : 'Here is the exact EV'}</span>
+      Your play made <span class="formula">${exact >= 0 ? '+' : ''}${exact.toFixed(1)}</span> chips in expected value.
+      Your estimate: <span class="formula">${userVal}</span><br/><br/>
+      ${q.explain}
+    </div>
+    <div class="ev-scale"><div class="fill" style="width:${pct}%"></div></div>
+    <div class="next-row"><button class="primary" id="ev-next">Next scenario →</button></div>
+  `;
+}
+
+/* =========================================================================
+   MODULE 5 — AI COACH (client-side heuristic stand-in)
+   ========================================================================= */
+function renderCoachModule() {
+  return `
+  <h2>Module 5 · AI Coach</h2>
+  <p class="sub">Paste a hand history and get a statistical breakdown of the key decision point.</p>
+  <div class="question-block">
+    <textarea id="coach-input" rows="6" style="width:100%; background:rgba(241,236,221,0.08); border:1px solid rgba(241,236,221,0.3); color:var(--cream); font-family:var(--font-mono); font-size:0.85rem; padding:12px; border-radius:8px;" placeholder="Example:&#10;Hero raises to 3bb with AhKh. Villain calls.&#10;Flop (6.5bb): Qh 8h 2c. Villain checks, Hero bets 4bb, Villain calls.&#10;Turn (14.5bb): 5s. Villain checks, Hero bets 10bb, Villain calls.&#10;River (34.5bb): 9c. Villain checks..."></textarea>
+    <div class="next-row" style="justify-content:flex-start; margin-top:14px;">
+      <button class="primary" id="coach-analyze">Analyze hand</button>
+    </div>
+    <div id="coach-output"></div>
+  </div>
+  <div class="explainer"><b>Note:</b> this in-browser demo uses simple heuristics (bet-sizing ratios, street count, pot growth) to illustrate the kind of feedback a full AI coach would give. A production version would call a hand-history parser plus a solver/LLM backend — see the "Wiring up a real AI backend" section in the README this app ships with.</div>
+  `;
+}
+
+function heuristicCoachAnalysis(text) {
+  if (!text.trim()) return `<div class="feedback-box bad"><span class="verdict bad-text">No hand pasted</span>Paste a hand history above, then click Analyze.</div>`;
+  const lines = text.split('\n').filter(l => l.trim());
+  const bets = [...text.matchAll(/bets?\s+(\d+(\.\d+)?)/gi)].map(m => parseFloat(m[1]));
+  const streets = ['Flop', 'Turn', 'River'].filter(s => text.includes(s)).length;
+  const potMatches = [...text.matchAll(/\((\d+(\.\d+)?)\s*bb\)/gi)].map(m => parseFloat(m[1]));
+  let sizingNote = 'No clear bet sizes detected — try including amounts like "bets 4bb".';
+  if (bets.length && potMatches.length) {
+    const ratios = bets.map((b, i) => potMatches[i] ? (b / potMatches[i] * 100).toFixed(0) : null).filter(Boolean);
+    sizingNote = `Detected bet sizing around ${ratios.join('%, ')}% of pot across the streets you bet. Sizes in the 50–75% range tend to balance value and bluffs well; very small or very large sizes narrow your effective range.`;
+  }
+  return `
+  <div class="feedback-box good">
+    <span class="verdict good-text">Heuristic read-through</span>
+    <b>Streets played:</b> ${streets || 'unclear'}<br/>
+    <b>Lines detected:</b> ${lines.length} action lines<br/>
+    <b>Bet sizing:</b> ${sizingNote}<br/><br/>
+    <b>Statistical reasoning prompts to ask yourself:</b> What's your equity on each street given the board texture? What % of your betting range is bluffs vs. value at this sizing? Does the pot odds math justify villain's calls (and therefore, does your bluff-to-value ratio hold up)?
+  </div>`;
+}
+
+/* =========================================================================
+   MODULE 6 — MONTE CARLO SIMULATOR
+   ========================================================================= */
+const PRESET_MATCHUPS = [
+  { label: 'A♠K♥ vs Q♠Q♣ (classic race)', h1: ['As','Kh'], h2: ['Qs','Qc'] },
+  { label: 'A♠A♥ vs K♠K♥ (AA vs KK)', h1: ['As','Ah'], h2: ['Ks','Kh'] },
+  { label: 'A♠K♠ vs 7♥7♣ (AK vs pair)', h1: ['As','Ks'], h2: ['7h','7c'] },
+  { label: 'J♠T♠ vs A♥K♦ (suited connector vs AK)', h1: ['Js','Ts'], h2: ['Ah','Kd'] },
+  { label: '8♠8♥ vs 9♠T♠ (pair vs suited connector)', h1: ['8s','8h'], h2: ['9s','Ts'] },
+  { label: 'K♠Q♠ vs J♣J♦ (dominated-ish overcards)', h1: ['Ks','Qs'], h2: ['Jc','Jd'] },
+];
+
+function renderMonteCarloModule() {
+  return `
+  <h2>Module 6 · Monte Carlo Simulator</h2>
+  <p class="sub">Build intuition for probabilities by watching thousands of simulated hands play out instantly.</p>
+  <div class="mc-controls">
+    <div class="mc-select-group">
+      <label>Matchup</label>
+      <select id="mc-preset">
+        ${PRESET_MATCHUPS.map((m, i) => `<option value="${i}">${m.label}</option>`).join('')}
+      </select>
+    </div>
+    <div class="mc-select-group">
+      <label>Trials</label>
+      <select id="mc-trials">
+        <option value="2000">2,000 (instant)</option>
+        <option value="10000" selected>10,000</option>
+        <option value="50000">50,000</option>
+        <option value="100000">100,000 (slower)</option>
+      </select>
+    </div>
+    <button class="primary" id="mc-run">Run simulation</button>
+  </div>
+
+  <div class="card-groups">
+    <div><span class="card-group-label">Hand 1</span><div class="card-row" id="mc-hand1"></div></div>
+    <div><span class="card-group-label">Hand 2</span><div class="card-row" id="mc-hand2"></div></div>
+  </div>
+
+  <div id="mc-results"></div>
+  <div class="explainer"><b>How it works:</b> the simulator deals random boards thousands of times, evaluates the best 5-card hand for each side using standard hand-ranking rules, and tallies the win/tie/loss frequency, the same logic (at far larger scale) that powers professional equity calculators.</div>
+  `;
+}
+
+function mcRenderHands() {
+  const idx = document.getElementById('mc-preset') ? parseInt(document.getElementById('mc-preset').value) : 0;
+  const m = PRESET_MATCHUPS[idx];
+  document.getElementById('mc-hand1').innerHTML = cardsHtml(m.h1);
+  document.getElementById('mc-hand2').innerHTML = cardsHtml(m.h2);
+  return m;
+}
+
+function runMonteCarlo(h1, h2, iterations, onDone, onProgress) {
+  const baseDeck = makeDeck();
+  const used = [...h1, ...h2];
+  const remaining = baseDeck.filter(c => !used.includes(c));
+  let win1 = 0, win2 = 0, tie = 0, done = 0;
+  const chunk = 500;
+
+  function step() {
+    const thisChunk = Math.min(chunk, iterations - done);
+    for (let i = 0; i < thisChunk; i++) {
+      const shuffled = shuffle(remaining);
+      const board = shuffled.slice(0, 5);
+      const r1 = evaluateBest([...h1, ...board]);
+      const r2 = evaluateBest([...h2, ...board]);
+      const cmp = compareHandArr(r1, r2);
+      if (cmp > 0) win1++;
+      else if (cmp < 0) win2++;
+      else tie++;
+    }
+    done += thisChunk;
+    onProgress(done, iterations);
+    if (done < iterations) {
+      setTimeout(step, 0);
+    } else {
+      onDone({ win1: win1 / iterations, win2: win2 / iterations, tie: tie / iterations });
+    }
+  }
+  step();
+}
+
+/* ---------------------------- Event wiring ---------------------------- */
+function attachHandlers() {
+  document.querySelectorAll('nav.modules button').forEach(btn => {
+    btn.onclick = () => {
+      state.module = btn.dataset.module;
+      state.currentAnswer = null;
+      state._potScenario = null;
+      render();
+    };
+  });
+
+  document.querySelectorAll('.difficulty-row .seg button').forEach(btn => {
+    btn.onclick = () => {
+      state.difficulty = btn.dataset.diff;
+      state.currentAnswer = null;
+      state._potScenario = null;
+      render();
+    };
+  });
+
+  // Module 1
+  const oddsSubmit = document.getElementById('odds-submit');
+  if (oddsSubmit) oddsSubmit.onclick = () => {
+    const val = parseFloat(document.getElementById('odds-input').value);
+    if (isNaN(val)) return;
+    submitAnswer('odds', val);
+  };
+  const oddsNext = document.getElementById('odds-next');
+  if (oddsNext) oddsNext.onclick = () => {
+    state.oddsIdx++;
+    state.currentAnswer = null;
+    render();
+  };
+
+  // Module 2
+  const comboSubmit = document.getElementById('combo-submit');
+  if (comboSubmit) comboSubmit.onclick = () => {
+    const val = parseFloat(document.getElementById('combo-input').value);
+    if (isNaN(val)) return;
+    submitAnswer('combo', val);
+  };
+  const comboNext = document.getElementById('combo-next');
+  if (comboNext) comboNext.onclick = () => {
+    state.comboIdx++;
+    state.currentAnswer = null;
+    render();
+  };
+
+  // Module 3
+  document.querySelectorAll('[data-pot-choice]').forEach(btn => {
+    btn.onclick = () => submitAnswer('pot', btn.dataset.potChoice);
+  });
+  const potNext = document.getElementById('pot-next');
+  if (potNext) potNext.onclick = () => {
+    state.potIdx++;
+    state.currentAnswer = null;
+    state._potScenario = null;
+    render();
+  };
+
+  // Module 4
+  const evSubmit = document.getElementById('ev-submit');
+  if (evSubmit) evSubmit.onclick = () => {
+    const val = document.getElementById('ev-input').value;
+    if (val === '') return;
+    submitAnswer('ev', val);
+  };
+  const evNext = document.getElementById('ev-next');
+  if (evNext) evNext.onclick = () => {
+    state.evIdx++;
+    state.currentAnswer = null;
+    render();
+  };
+
+  // Module 5
+  const coachBtn = document.getElementById('coach-analyze');
+  if (coachBtn) coachBtn.onclick = () => {
+    const text = document.getElementById('coach-input').value;
+    document.getElementById('coach-output').innerHTML = heuristicCoachAnalysis(text);
+  };
+
+  // Module 6
+  const mcPreset = document.getElementById('mc-preset');
+  if (mcPreset) {
+    mcRenderHands();
+    mcPreset.onchange = mcRenderHands;
+    const mcRun = document.getElementById('mc-run');
+    mcRun.onclick = () => {
+      const m = mcRenderHands();
+      const iterations = parseInt(document.getElementById('mc-trials').value);
+      mcRun.disabled = true;
+      const resultsEl = document.getElementById('mc-results');
+      resultsEl.innerHTML = `<div class="mc-progress-label">Simulating…</div>`;
+      runMonteCarlo(m.h1, m.h2, iterations, (result) => {
+        mcRun.disabled = false;
+        resultsEl.innerHTML = renderMcResults(result, iterations);
+      }, (done, total) => {
+        resultsEl.innerHTML = `<div class="mc-progress-label">Simulating… ${done.toLocaleString()} / ${total.toLocaleString()} hands</div>`;
+      });
+    };
+  }
+}
+
+function renderMcResults(result, iterations) {
+  return `
+  <div class="mc-bars">
+    <div class="mc-bar-row">
+      <div class="mc-label">Hand 1</div>
+      <div class="mc-bar-track"><div class="mc-bar-fill p1" style="width:${(result.win1*100).toFixed(1)}%"></div></div>
+      <div class="mc-pct">${(result.win1*100).toFixed(1)}%</div>
+    </div>
+    <div class="mc-bar-row">
+      <div class="mc-label">Hand 2</div>
+      <div class="mc-bar-track"><div class="mc-bar-fill p2" style="width:${(result.win2*100).toFixed(1)}%"></div></div>
+      <div class="mc-pct">${(result.win2*100).toFixed(1)}%</div>
+    </div>
+    <div class="mc-bar-row">
+      <div class="mc-label">Tie</div>
+      <div class="mc-bar-track"><div class="mc-bar-fill tie" style="width:${(result.tie*100).toFixed(1)}%"></div></div>
+      <div class="mc-pct">${(result.tie*100).toFixed(1)}%</div>
+    </div>
+  </div>
+  <div class="mc-progress-label">${iterations.toLocaleString()} hands simulated.</div>
+  `;
+}
+
+/* ---------------------------- Scoring ---------------------------- */
+function submitAnswer(module, userVal) {
+  let isCorrect = false;
+  if (module === 'odds') {
+    const q = getOddsQ();
+    isCorrect = Math.abs(userVal - exactProb(q)) <= 3;
+  } else if (module === 'combo') {
+    const q = getComboQ();
+    isCorrect = Number(userVal) === q.answer;
+  } else if (module === 'pot') {
+    const s = state._potScenario;
+    const requiredEquity = (s.bet / (s.pot + 2 * s.bet)) * 100;
+    const correctChoice = s.equity > requiredEquity ? 'call' : 'fold';
+    isCorrect = (userVal === correctChoice) || (userVal === 'raise' && s.equity > requiredEquity + 20);
+  } else if (module === 'ev') {
+    const q = getEvQ();
+    isCorrect = Math.abs(Number(userVal) - q.callEV) <= Math.max(3, Math.abs(q.callEV) * 0.15);
+  }
+
+  state.answered++;
+  if (isCorrect) {
+    state.correct++;
+    state.streak++;
+    state.score += 10 + Math.min(state.streak, 10);
+  } else {
+    state.streak = 0;
+  }
+  state.currentAnswer = { module, userVal };
+  render();
+}
+
+/* ---------------------------- Boot ---------------------------- */
+render();
+</script>
+</body>
+</html>
