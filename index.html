@@ -47,7 +47,7 @@
     min-height: 100vh;
   }
 
-  /* subtle felt texture */
+  
   body::before {
     content: "";
     position: fixed;
@@ -67,7 +67,7 @@
     padding: 28px 20px 80px;
   }
 
-  /* ---------- Header ---------- */
+  /* Header  */
   header.top {
     display: flex;
     align-items: center;
@@ -124,7 +124,7 @@
   }
   .stat-pill .n { color: var(--gold-bright); font-weight: 700; }
 
-  /* ---------- Nav ---------- */
+  /*  Nav  */
   nav.modules {
     display: flex;
     gap: 6px;
@@ -197,7 +197,7 @@
     color: var(--ink);
   }
 
-  /* ---------- Panel / card shell ---------- */
+  /* Panel / card shell  */
   .panel {
     background: rgba(8, 28, 22, 0.55);
     border: 1px solid rgba(201,162,75,0.25);
@@ -404,12 +404,6 @@
 <div class="app" id="app"></div>
 
 <script>
-/* =========================================================================
-   RAKE & REASON — a Duolingo-style trainer for poker statistics
-   Single-file vanilla JS app. No build step required.
-   ========================================================================= */
-
-/* ---------------------------- Poker primitives ---------------------------- */
 const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const SUITS = ['s','h','d','c'];
 const SUIT_SYMBOL = { s: '♠', h: '♥', d: '♦', c: '♣' };
@@ -507,10 +501,10 @@ function cardsHtml(cards, ghostCount) {
   return html;
 }
 
-/* ---------------------------- Global app state ---------------------------- */
+/* Global app state */
 const state = {
   module: 'odds',
-  difficulty: 'beginner', // beginner | intermediate | advanced
+  difficulty: 'beginner', // beginner, intermediate, advanced
   score: 0,
   streak: 0,
   answered: 0,
@@ -597,9 +591,7 @@ function renderModule() {
   }
 }
 
-/* =========================================================================
-   MODULE 1 — POKER ODDS
-   ========================================================================= */
+/*  MODULE 1 — POKER ODDS */
 const ODDS_QUESTIONS = {
   beginner: [
     {
@@ -706,9 +698,7 @@ function renderOddsFeedback(q) {
   `;
 }
 
-/* =========================================================================
-   MODULE 2 — COMBINATORICS
-   ========================================================================= */
+/*  MODULE 2 — COMBINATORICS */
 const COMBO_QUESTIONS = {
   beginner: [
     { prompt: "How many distinct 2-card combinations of pocket Aces (A♠A♥, A♠A♦, etc.) exist in a single deck?", answer: 6, explain: "You're choosing 2 of the 4 aces: C(4,2) = 6 combinations. This is true for any specific pocket pair." },
@@ -761,9 +751,7 @@ function renderComboFeedback(q) {
   `;
 }
 
-/* =========================================================================
-   MODULE 3 — POT ODDS
-   ========================================================================= */
+/* MODULE 3 — POT ODDS */
 function genPotScenario(difficulty) {
   const pots = { beginner: [40, 60, 80, 100], intermediate: [75, 120, 150, 220], advanced: [90, 140, 260, 340] };
   const potList = pots[difficulty];
@@ -821,9 +809,7 @@ function renderPotFeedback(s, requiredEquity) {
   `;
 }
 
-/* =========================================================================
-   MODULE 4 — EV TRAINER
-   ========================================================================= */
+/* MODULE 4 — EV TRAINER */
 const EV_SCENARIOS = {
   beginner: [
     { title: "River bluff-catch", desc: "Pot is 100. Opponent shoves 100 on the river. You think they're bluffing 30% of the time.", callEV: (100*0.30) - (100*0.70), explain: "EV(call) = 0.30 × (+100) + 0.70 × (−100) = +30 − 70 = −40. Folding (EV = 0) beats calling here." },
@@ -880,9 +866,7 @@ function renderEvFeedback(q) {
   `;
 }
 
-/* =========================================================================
-   MODULE 5 — AI COACH (client-side heuristic stand-in)
-   ========================================================================= */
+/* MODULE 5 — AI COACH  */
 function renderCoachModule() {
   return `
   <h2>Module 5 · AI Coach</h2>
@@ -919,9 +903,7 @@ function heuristicCoachAnalysis(text) {
   </div>`;
 }
 
-/* =========================================================================
-   MODULE 6 — MONTE CARLO SIMULATOR
-   ========================================================================= */
+/* MODULE 6 — MONTE CARLO SIMULATOR*/
 const PRESET_MATCHUPS = [
   { label: 'A♠K♥ vs Q♠Q♣ (classic race)', h1: ['As','Kh'], h2: ['Qs','Qc'] },
   { label: 'A♠A♥ vs K♠K♥ (AA vs KK)', h1: ['As','Ah'], h2: ['Ks','Kh'] },
@@ -1002,7 +984,7 @@ function runMonteCarlo(h1, h2, iterations, onDone, onProgress) {
   step();
 }
 
-/* ---------------------------- Event wiring ---------------------------- */
+/* Event wiring */
 function attachHandlers() {
   document.querySelectorAll('nav.modules button').forEach(btn => {
     btn.onclick = () => {
@@ -1128,7 +1110,7 @@ function renderMcResults(result, iterations) {
   `;
 }
 
-/* ---------------------------- Scoring ---------------------------- */
+/* Scoring */
 function submitAnswer(module, userVal) {
   let isCorrect = false;
   if (module === 'odds') {
@@ -1159,7 +1141,7 @@ function submitAnswer(module, userVal) {
   render();
 }
 
-/* ---------------------------- Boot ---------------------------- */
+/* Boot */
 render();
 </script>
 </body>
